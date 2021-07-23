@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchFromGitHub, mkYarnPackage, makeWrapper, nodejs, nodePackages, python3, xcbuild }:
+{ stdenv, lib, fetchFromGitHub, mkYarnPackage, makeWrapper, jq, nodejs, nodePackages, python3, xcbuild }:
 let
   base = "ever-traduora";
   version = "0.19.0";
@@ -17,7 +17,6 @@ in
 
     src = "${traduoraSrc}/api";
 
-    buildInputs = [ ];
     nativeBuildInputs = [
       makeWrapper
       python3
@@ -56,6 +55,8 @@ in
 
     src = "${traduoraSrc}/webapp";
 
+    nativeBuildInputs = [ jq ];
+
     postPatch = ''
       # I give up...
       substituteInPlace src/styles.scss \
@@ -65,6 +66,10 @@ in
 
       substituteInPlace angular.json \
         --replace "../dist/public" "$(pwd)/dist"
+
+      # https://github.com/angular/angular-cli/issues/19401
+      jq '.projects."traduora-webapp".architect.build.configurations.production.optimization = { fonts: false }' < angular.json > angular.new.json
+      mv angular.new.json angular.json
     '';
 
     preBuild = ''

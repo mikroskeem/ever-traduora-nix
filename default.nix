@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchFromGitHub, mkYarnPackage, makeWrapper, jq, nodejs, nodePackages, python3, xcbuild }:
+{ stdenv, lib, fetchFromGitHub, mkYarnPackage, makeWrapper, jq, nodejs, nodePackages, xcbuild }:
 let
   base = "ever-traduora";
   version = "0.19.0";
@@ -19,24 +19,30 @@ in
 
     nativeBuildInputs = [
       makeWrapper
-      python3
+      nodejs
+      nodejs.passthru.python
       nodePackages.node-gyp
       nodePackages.node-pre-gyp
     ] ++ lib.optionals stdenv.isDarwin [
       xcbuild
     ];
 
-    buildPhase = ''
-      runHook preBuildHook
-      yarn build
+    preBuild = ''
+      # XXX: ?
+      substituteInPlace node_modules/node-addon-api/napi.h \
+        --replace "<node_api.h>" '"${nodejs}/include/node/node_api.h"'
 
       # Build bcrypt natives
       tmphome="$(mktemp -d)"
       pushd node_modules/bcrypt
-      env HOME="$tmphome" node-pre-gyp install --fallback-to-build
+      env HOME="$tmphome" node-pre-gyp install --fallback-to-build --nodedir=${nodejs}/include/node
       popd
+    '';
 
-      runHook postBuildHook
+    buildPhase = ''
+      runHook preBuild
+      yarn build
+      runHook postBuild
     '';
 
     distPhase = ":"; # unneeded tarball

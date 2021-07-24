@@ -78,6 +78,16 @@ let
       xcbuild
     ];
 
+    postPatch = ''
+      # Hardcode paths to the database entities and migrations, so
+      # program launching wouldn't depend on the cwd
+      substituteInPlace src/config.ts \
+        --replace 'src/entity/' '${placeholder "out"}/libexec/ever-traduora-api/deps/dist/src/entity/'
+
+      substituteInPlace src/config.ts \
+        --replace 'src/migrations/' '${placeholder "out"}/libexec/ever-traduora-api/deps/dist/src/migrations/'
+    '';
+
     preBuild = ''
       # XXX: ?
       substituteInPlace node_modules/node-addon-api/napi.h \
@@ -99,6 +109,7 @@ let
     distPhase = ":"; # unneeded tarball
     postInstall = ''
       makeWrapper '${nodejs}/bin/node' "$out/bin/traduora-api" \
+        --run "cd $out/libexec/ever-traduora-api/deps/dist" \
         --add-flags "$out/libexec/ever-traduora-api/deps/dist/src/main.js" \
         --set-default NODE_ENV "production" \
         --set-default TR_PUBLIC_DIR "${web}"

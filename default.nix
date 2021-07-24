@@ -9,52 +9,7 @@ let
     rev = "v${version}";
     sha256 = "sha256-jCH6zvCrMB9GINxYbK0qD33N5lnAnGj1kYgGC3qxZ4E=";
   };
-in
-{
-  api = mkYarnPackage rec {
-    pname = "${base}-api";
-    inherit version;
 
-    src = "${traduoraSrc}/api";
-
-    nativeBuildInputs = [
-      makeWrapper
-      nodejs
-      nodejs.passthru.python
-      nodePackages.node-gyp
-      nodePackages.node-pre-gyp
-    ] ++ lib.optionals stdenv.isDarwin [
-      xcbuild
-    ];
-
-    preBuild = ''
-      # XXX: ?
-      substituteInPlace node_modules/node-addon-api/napi.h \
-        --replace "<node_api.h>" '"${nodejs}/include/node/node_api.h"'
-
-      # Build bcrypt natives
-      tmphome="$(mktemp -d)"
-      pushd node_modules/bcrypt
-      env HOME="$tmphome" node-pre-gyp install --fallback-to-build --nodedir=${nodejs}/include/node
-      popd
-    '';
-
-    buildPhase = ''
-      runHook preBuild
-      yarn build
-      runHook postBuild
-    '';
-
-    distPhase = ":"; # unneeded tarball
-    postInstall = ''
-      makeWrapper '${nodejs}/bin/node' "$out/bin/traduora-api" \
-        --add-flags "$out/libexec/ever-traduora-api/deps/dist/src/main.js"
-    '';
-
-    doDist = false; # XXX: does not work?
-    dontStrip = true;
-    yarnNix = ./yarn-api.nix;
-  };
   web = mkYarnPackage rec {
     pname = "${base}-web";
     inherit version;
@@ -106,4 +61,53 @@ in
     dontStrip = true;
     yarnNix = ./yarn-web.nix;
   };
-}
+
+  api = mkYarnPackage rec {
+    pname = "${base}-api";
+    inherit version;
+
+    src = "${traduoraSrc}/api";
+
+    nativeBuildInputs = [
+      makeWrapper
+      nodejs
+      nodejs.passthru.python
+      nodePackages.node-gyp
+      nodePackages.node-pre-gyp
+    ] ++ lib.optionals stdenv.isDarwin [
+      xcbuild
+    ];
+
+    preBuild = ''
+      # XXX: ?
+      substituteInPlace node_modules/node-addon-api/napi.h \
+        --replace "<node_api.h>" '"${nodejs}/include/node/node_api.h"'
+
+      # Build bcrypt natives
+      tmphome="$(mktemp -d)"
+      pushd node_modules/bcrypt
+      env HOME="$tmphome" node-pre-gyp install --fallback-to-build --nodedir=${nodejs}/include/node
+      popd
+    '';
+
+    buildPhase = ''
+      runHook preBuild
+      yarn build
+      runHook postBuild
+    '';
+
+    distPhase = ":"; # unneeded tarball
+    postInstall = ''
+      makeWrapper '${nodejs}/bin/node' "$out/bin/traduora-api" \
+        --add-flags "$out/libexec/ever-traduora-api/deps/dist/src/main.js" \
+        --set-default TR_PUBLIC_DIR "${web}"
+    '';
+
+    doDist = false; # XXX: does not work?
+    dontStrip = true;
+    yarnNix = ./yarn-api.nix;
+
+    passthru.web = web; # Exposed for e.g nginx
+  };
+in
+api

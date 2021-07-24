@@ -100,6 +100,7 @@ let
     postInstall = ''
       makeWrapper '${nodejs}/bin/node' "$out/bin/traduora-api" \
         --add-flags "$out/libexec/ever-traduora-api/deps/dist/src/main.js" \
+        --set-default NODE_ENV "production" \
         --set-default TR_PUBLIC_DIR "${web}"
     '';
 

@@ -13,6 +13,7 @@ let
   web = mkYarnPackage rec {
     pname = "${base}-web";
     inherit version;
+    name = "${pname}-${version}"; # XXX: `nix flake show` IFD fix
 
     src = "${traduoraSrc}/webapp";
 
@@ -65,6 +66,7 @@ let
   api = mkYarnPackage rec {
     pname = "${base}-api";
     inherit version;
+    name = "${pname}-${version}"; # XXX: `nix flake show` IFD fix
 
     src = "${traduoraSrc}/api";
 

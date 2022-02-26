@@ -18,7 +18,8 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in
       rec {
-        packages.ever-traduora-api = pkgs.callPackage ./default.nix { };
+        packages.esbuild-0_14_24 = pkgs.callPackage ./esbuild-0_14_24.nix { };
+        packages.ever-traduora-api = pkgs.callPackage ./default.nix { esbuild = packages.esbuild-0_14_24; };
         packages.ever-traduora-web = packages.ever-traduora-api.web;
 
         defaultPackage = packages.ever-traduora-api;

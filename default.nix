@@ -1,13 +1,13 @@
-{ stdenv, lib, fetchFromGitHub, mkYarnPackage, makeWrapper, jq, nodejs, nodePackages, xcbuild }:
+{ stdenv, lib, fetchFromGitHub, mkYarnPackage, makeWrapper, jq, nodejs, nodePackages, xcbuild, esbuild }:
 let
   base = "ever-traduora";
-  version = "0.19.0";
+  version = "0.19.2";
 
   traduoraSrc = fetchFromGitHub {
     owner = "ever-co";
     repo = base;
     rev = "v${version}";
-    sha256 = "sha256-jCH6zvCrMB9GINxYbK0qD33N5lnAnGj1kYgGC3qxZ4E=";
+    sha256 = "sha256-Jc4l5t0po4OdwKRjBqzH+7fnV4yD8AkrkR8JYfw6zYg=";
   };
 
   web = mkYarnPackage rec {
@@ -18,6 +18,8 @@ let
     src = "${traduoraSrc}/webapp";
 
     nativeBuildInputs = [ jq ];
+
+    ESBUILD_BINARY_PATH = "${esbuild}/bin/esbuild";
 
     postPatch = ''
       # I give up...

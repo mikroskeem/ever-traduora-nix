@@ -10,59 +10,23 @@ let
     sha256 = "sha256-Jc4l5t0po4OdwKRjBqzH+7fnV4yD8AkrkR8JYfw6zYg=";
   };
 
-  web = mkYarnPackage rec {
+  web = stdenv.mkDerivation rec {
     pname = "${base}-web";
     inherit version;
     name = "${pname}-${version}"; # XXX: `nix flake show` IFD fix
 
-    src = "${traduoraSrc}/webapp";
+    src = ./prebuilt + "/ever-traduora-v${version}.tar.gz";
 
-    nativeBuildInputs = [ jq ];
-
-    ESBUILD_BINARY_PATH = "${esbuild}/bin/esbuild";
-
-    postPatch = ''
-      # I give up...
-      substituteInPlace src/styles.scss \
-        --replace "../node_modules/" "$(pwd)/node_modules/"
-      substituteInPlace src/custom_bootstrap.scss \
-        --replace "../node_modules/" "$(pwd)/node_modules/"
-
-      substituteInPlace angular.json \
-        --replace "../dist/public" "$(pwd)/dist"
-
-      # https://github.com/angular/angular-cli/issues/19401
-      jq '.projects."traduora-webapp".architect.build.configurations.production.optimization = { fonts: false }' < angular.json > angular.new.json
-      mv angular.new.json angular.json
-    '';
-
-    preBuild = ''
-      # Work around NgCC failing because of EACCESS - silly NgCC wants to
-      # write into node_modules
-      pushd deps/ever-traduora-webapp
-      mv node_modules node_modules.old
-      mkdir node_modules
-      cd node_modules
-      for d in ../node_modules.old/* ../node_modules.old/.bin; do
-        ln -s "$d" $(basename -- "$d")
-      done
-      popd
-    '';
-
-    buildPhase = ''
-      runHook preBuild
-      yarn build --prod
-      runHook postBuild
-    '';
+    phases = [ "unpackPhase" "installPhase" ];
 
     installPhase = ''
-      mkdir -p $out
-      mv dist/* $out/
-    '';
+      runHook preInstall
 
-    distPhase = ":";
-    dontStrip = true;
-    yarnNix = ./yarn-web.nix;
+      mkdir -p $out
+      tar -C $out -xzf $src
+
+      runHook postInstall
+    '';
   };
 
   api = mkYarnPackage rec {

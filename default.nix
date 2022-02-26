@@ -22,8 +22,8 @@ let
     installPhase = ''
       runHook preInstall
 
-      mkdir -p $out
-      tar -C $out -xzf $src
+      tar -xzf $src
+      mv public $out
 
       runHook postInstall
     '';
